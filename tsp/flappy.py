@@ -117,7 +117,7 @@ class Flappy():
 
 
 class Game(tk.Frame):
-    def __init__(self, play=True, birds=[]):
+    def __init__(self, play=True, genetic_algorithm=None):
         self.master = tk.Tk()
         super().__init__(self.master)
         self.generation = 0
@@ -126,7 +126,10 @@ class Game(tk.Frame):
         if self.play:
             self.master.bind("<Key>", self.on_key)
 
-        self.birds = birds or [Flappy()]
+        if not play and genetic_algorithm:
+            self.birds = [Flappy(chromosome=p) for p in genetic_algorithm.population]
+        else:
+            self.birds = [Flappy()]
 
         self.setup()
         self.reset()
@@ -151,11 +154,18 @@ class Game(tk.Frame):
         self.canvas.pack(pady=10)
         self.button = tk.Button(self.master, text="Restart", command=self.restart)
         self.button.pack(pady=10)
-        self.score_label = tk.Label(self.master, text="Score")
-        self.score_label.pack(pady=10)
-        self.score = tk.StringVar()
-        self.score_container = tk.Label(self.master, textvariable=self.score)
-        self.score_container.pack()
+
+        self.generation_counter = tk.StringVar()
+        self.generation_container = tk.Label(self.master, textvariable=self.generation_counter, font='Helvetica 13 bold')
+        self.generation_container.pack(pady=10)
+
+        self.birds_scores = [tk.StringVar() for _ in self.birds]
+        self.score_containers = [
+            tk.Label(self.master, textvariable=self.birds_scores[x])
+            for x in range(len(self.birds))
+        ]
+        for c in self.score_containers:
+            c.pack()
 
     def restart(self):
         self.reset()
@@ -189,16 +199,20 @@ class Game(tk.Frame):
 
         if self.play:
             self.draw_flappy(self.birds[0])
-            self.score.set(str(self.time))
         else:
             [self.draw_flappy(bird) for bird in self.birds if not bird.dead]
+
+        self.generation_counter.set(f'Generation: {self.generation}')
+        # Set scores
+        for i, c in enumerate(self.birds_scores):
+            c.set(f'Bird {i} Score:                      {self.birds[i].score}')
 
     def curr_x(self, x):
         return x - self.time * SPEED
 
     def update(self):
         self.time += 1
-        [bird.update(self.obstacles, self.curr_x) for bird in birds]
+        [bird.update(self.obstacles, self.curr_x) for bird in self.birds]
 
         # Filter obstacles and create new if necessary
         self.obstacles = [
@@ -220,6 +234,7 @@ class Game(tk.Frame):
                     for x in range(*x_range, XSTEP)
                 ]
             ]
+        self.stop = all([x.dead for x in self.birds])
 
     def animate(self):
         if self.stop or (self.play and self.birds[0].dead):
@@ -230,8 +245,9 @@ class Game(tk.Frame):
 
 
 if __name__ == '__main__':
-    def chrom_rand():
-        return [random.choice([0, 1]) for _ in range(VSIZE*DYSIZE*DXSIZE)]
-    birds = [Flappy(v=-random.random(), y=random.randrange(HEIGHT//4, 3*HEIGHT//4), chromosome=chrom_rand()) for _ in range(10)]
-    game = Game(play=False, birds=birds)
+    from ga import GeneticAlgorithm
+
+    genetic_alg = GeneticAlgorithm(population_size=10, chromosome_size=VSIZE*DYSIZE*DXSIZE)
+
+    game = Game(play=False, genetic_algorithm=genetic_alg)
     game.mainloop()
