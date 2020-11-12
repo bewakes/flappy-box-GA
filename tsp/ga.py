@@ -28,13 +28,15 @@ class GeneticAlgorithm:
             [random.choice([0, 1]) for _ in range(self.chromosome_size)]
             for _ in range(population_size)
         ]
-        # TODO: get this dynamically
-        self.population_fitness = [u() for _ in range(self.population_size)]
 
     def mutate(self, c):
         if self.mutation_type == 'flip':
-            mutation_point = random.randrange(self.chromosome_size)
-            return [x if i != mutation_point else int(not x) for i, x in enumerate(c)]
+            number_of_mutations = max(1, self.chromosome_size//100)  # Mutate 0.1 % of genes
+            mutation_points = [random.randrange(self.chromosome_size) for _ in range(number_of_mutations)]
+            new_c = list(c)
+            for i in mutation_points:
+                new_c[i] = int(not c[i])
+            return new_c
 
     def crossover(self, c1, c2):
         if self.crossover_type == 'one_point':
@@ -46,22 +48,22 @@ class GeneticAlgorithm:
         else:
             return c1, c2
 
-    def do_roulette_selection(self):
+    def do_roulette_selection(self, fitness):
         parents = []
-        total_fitness = sum(self.population_fitness)
+        total_fitness = sum(fitness)
         for x in range(self.population_size):
             p = 0
             s = u(0, total_fitness)
-            for i, f in enumerate(self.population_fitness):
+            for i, f in enumerate(fitness):
                 p += f
                 if p >= s:
                     parents.append(self.population[i])
                     break
         return parents
 
-    def next_generation(self):
+    def next_generation(self, fitness):
         if self.selection_method == 'roulette_wheel':
-            parents = self.do_roulette_selection()
+            parents = self.do_roulette_selection(fitness)
         else:
             raise Exception("invalid selection method")
         # Now we have population ready to crossover
@@ -81,9 +83,3 @@ class GeneticAlgorithm:
 
         mutated = [self.mutate(x) if u() < self.mutation_rate else x for x in next_gen]
         return mutated
-
-
-if __name__ == '__main__':
-    ga = GeneticAlgorithm()
-    print(ga.population)
-    print(ga.next_generation())
