@@ -37,6 +37,8 @@ class Flappy(tk.Frame):
         self.master = tk.Tk()
         super().__init__(self.master)
 
+        self.master.bind("<Key>", self.on_key)
+
         self.canvas = tk.Canvas(self.master, width=WIDTH, height=HEIGHT, bg='white')
         self.canvas.pack(pady=10)
         self.button = tk.Button(self.master, text="Restart", command=self.reset)
@@ -52,7 +54,11 @@ class Flappy(tk.Frame):
                 (self.curr_x(x1), y1, self.curr_x(x2), y2)
             )
             for obs in self.obstacles for (x1, y1, x2, y2) in obs
-        ])
+        ]) or self.y > HEIGHT or self.y < -FLAPPY_HEIGHT
+
+    def on_key(self, event):
+        if event.keysym == 'space':
+            self.v = -8
 
     def reset(self):
         self.time = 0
@@ -61,7 +67,9 @@ class Flappy(tk.Frame):
             generate_obstacle(x)
             for x in range(300, 1000, OBSTACLES_WIDTH + OBSTACLES_H_SPACING)
         ]
-        self.x = 200
+        self.a = 0.6
+        self.v = 0
+        self.x = 20
         self.y = HEIGHT / 2
 
     def draw_flappy(self):
@@ -93,6 +101,9 @@ class Flappy(tk.Frame):
     def update(self):
         if self.did_collide():
             return
+
+        self.v += self.a
+        self.y += self.v
         self.time += 1
 
         # Filter obstacles and create new if necessary
