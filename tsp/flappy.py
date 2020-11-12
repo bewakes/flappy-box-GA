@@ -36,16 +36,21 @@ class Flappy(tk.Frame):
     def __init__(self):
         self.master = tk.Tk()
         super().__init__(self.master)
-
         self.master.bind("<Key>", self.on_key)
+        self.reset()
+        self.setup()
+        self.animate()
 
+    def setup(self):
         self.canvas = tk.Canvas(self.master, width=WIDTH, height=HEIGHT, bg='white')
         self.canvas.pack(pady=10)
         self.button = tk.Button(self.master, text="Restart", command=self.reset)
         self.button.pack(pady=10)
-
-        self.reset()
-        self.animate()
+        self.score_label = tk.Label(self.master, text="Score")
+        self.score_label.pack(pady=10)
+        self.score = tk.StringVar()
+        self.score_container = tk.Label(self.master, textvariable=self.score)
+        self.score_container.pack()
 
     def did_collide(self):
         return any([
@@ -94,6 +99,8 @@ class Flappy(tk.Frame):
         self.canvas.delete('all')
         self.draw_obstacles()
         self.draw_flappy()
+        # Set score
+        self.score.set(str(self.time))
 
     def curr_x(self, x):
         return x - self.time * SPEED
