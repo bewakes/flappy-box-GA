@@ -6,17 +6,17 @@ import tkinter as tk
 FPS = 120
 FRAME_INTERVAL_MS = round(1000/FPS)
 
-WIDTH = 900
-HEIGHT = 450
+WIDTH = 1500
+HEIGHT = 600
 OBSTACLES_H_SPACING = 350
-OBSTACLES_V_SPACING = 200
+OBSTACLES_V_SPACING = 250
 OBSTACLES_WIDTH = 50
 SPEED = 8
 XSTEP = OBSTACLES_WIDTH + OBSTACLES_H_SPACING
 FLAPPY_WIDTH = 28
 FLAPPY_HEIGHT = 25
 G = 0.6
-OBSTACLES_START = 400
+OBSTACLES_START = 700
 
 CHECK_STEP = 2
 
@@ -57,7 +57,7 @@ def bounding_rect_collision(rect_a, rect_b):
 
 
 class Flappy():
-    def __init__(self, x=20, y=HEIGHT/2, v=0, chromosome=[]):
+    def __init__(self, x=150, y=HEIGHT/2, v=0, chromosome=[]):
         self.dead = False
         self.init_x, self.init_y, self.init_v = x, y, v
         self.y = y
@@ -131,6 +131,7 @@ class Game(tk.Frame):
         super().__init__(self.master)
         self.generation = 0
         self.best_score_so_far = 0
+        self.last_best_score = 0
         self.genetic_algorithm = genetic_algorithm
 
         self.play = play
@@ -146,17 +147,17 @@ class Game(tk.Frame):
         self.animate()
 
     def reset(self):
-        self.obstacles = [
+        self._obstacles = [
             generate_obstacle(x)
             for x in range(OBSTACLES_START, 1200, OBSTACLES_WIDTH + OBSTACLES_H_SPACING)
         ]
-        # self.obstacles = read_obstacles()
+        self.obstacles = read_obstacles()
         [bird.reset() for bird in self.birds]
         self.stop = False
         self.time = 0
 
     def setup(self):
-        self.canvas = tk.Canvas(self.master, width=WIDTH, height=HEIGHT, bg='green')
+        self.canvas = tk.Canvas(self.master, width=WIDTH, height=HEIGHT, bg='#8FBC8F')
         self.canvas.pack(pady=10)
 
         if self.play:
@@ -170,15 +171,19 @@ class Game(tk.Frame):
             self.best_so_far = tk.StringVar()
             self.best_so_far_container = tk.Label(self.master, textvariable=self.best_so_far, font='Helvetica 14 bold')
 
-            self.birds_scores = [tk.StringVar() for _ in self.birds]
+            self.last_best = tk.StringVar()
+            self.last_best_container = tk.Label(self.master, textvariable=self.last_best, font='Helvetica 12 bold')
+
+            self.birds_scores = [tk.StringVar() for _ in self.birds[:16]]
             self.score_containers = [
                 tk.Label(self.master, textvariable=self.birds_scores[x])
-                for x in range(len(self.birds))
+                for x in range(len(self.birds[:16]))
             ]
             for c in self.score_containers:
                 c.pack()
 
-            self.best_so_far_container.pack(pady=20)
+            self.last_best_container.pack(pady=10)
+            self.best_so_far_container.pack(pady=10)
 
     def restart(self):
         self.reset()
@@ -190,6 +195,7 @@ class Game(tk.Frame):
         max_fitness = max(fitness)
         if max_fitness > self.best_score_so_far:
             self.best_score_so_far = max_fitness
+        self.last_best_score = max(fitness)
         next_gen = self.genetic_algorithm.next_generation(fitness)
         self.birds = [Flappy(chromosome=x) for x in next_gen]
         self.reset()
@@ -230,11 +236,12 @@ class Game(tk.Frame):
         else:
             [self.draw_flappy(bird) for bird in self.birds if not bird.dead]
             self.generation_counter.set(f'Generation: {self.generation}')
-            # Set scores
-            for i, c in enumerate(self.birds_scores):
+            # Set scores only select 16 best
+            for i, c in sorted(enumerate(self.birds_scores), key=lambda x: self.birds[x[0]].score, reverse=True)[:16]:
                 c.set(f'Bird {i} Score:                      {self.birds[i].score}')
 
             self.best_so_far.set(f'Best Score so far: {self.best_score_so_far}')
+            self.last_best.set(f'Last best: {self.last_best_score}')
 
     def curr_x(self, x):
         return x - self.time * SPEED
@@ -299,12 +306,10 @@ if __name__ == '__main__':
     from ga import GeneticAlgorithm
 
     genetic_alg = GeneticAlgorithm(
-        population_size=24,
-        crossover_rate=0.6,
-        mutation_rate=0.1,
+        population_size=50,
+        mutation_rate=0.25,
         chromosome_size=DYSIZE*DXSIZE,
     )
-    print(genetic_alg.chromosome_size)
 
     game = Game(play=False, genetic_algorithm=genetic_alg)
     game.mainloop()

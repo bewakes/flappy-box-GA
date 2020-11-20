@@ -1,8 +1,9 @@
+import math
 import random
 
 MUTATION_TYPES = ['flip', 'interchange']
-CROSSOVER_TYPES = ['one_point', 'two_point']
-SELECTION_METHODS = ['roulette_wheel', 'rank_selection']
+CROSSOVER_TYPES = ['uniform', 'one_point', 'two_point']
+SELECTION_METHODS = ['elitism', 'roulette_wheel', 'rank_selection']
 
 
 def u(s=0, e=1):
@@ -12,8 +13,8 @@ def u(s=0, e=1):
 class GeneticAlgorithm:
     def __init__(self, population_size=10, mutation_rate=0.01,
                  crossover_rate=0.3, mutation_type='flip',
-                 crossover_type='one_point', chromosome_size=100,
-                 selection_method='roulette_wheel'):
+                 crossover_type='uniform', chromosome_size=100,
+                 selection_method='elitism'):
 
         self.population_size = population_size
         self.chromosome_size = chromosome_size
@@ -41,9 +42,20 @@ class GeneticAlgorithm:
     def crossover(self, c1, c2):
         if self.crossover_type == 'one_point':
             crossover_point = random.randrange(1, self.chromosome_size)
-            child1 = c1[:crossover_point] + c2[crossover_point:]
-            child2 = c2[:crossover_point] + c1[crossover_point:]
-            return child1, child2
+            return c1[:crossover_point] + c2[crossover_point:]
+        elif self.crossover_type == 'uniform':
+            p1_prob = (1 - self.mutation_rate) / 2
+            p2_prob = 1 - self.mutation_rate
+            child = []
+            for i in range(self.chromosome_size):
+                r = u()
+                if r <= p1_prob:
+                    child.append(c1[i])
+                elif r <= p2_prob:
+                    child.append(c2[i])
+                else:
+                    child.append(random.choice([0, 1]))
+            return child
         # TODO: implement other
         else:
             return c1, c2
@@ -63,16 +75,6 @@ class GeneticAlgorithm:
                 if p >= s:
                     parents.append(self.population[i])
                     break
-        return parents
-
-    def next_generation(self, fitness):
-        """
-        @fitness: [population 0 fitness, population 1 fitness, ... population N fitness]
-        """
-        if self.selection_method == 'roulette_wheel':
-            parents = self.do_roulette_selection(fitness)
-        else:
-            raise Exception("invalid selection method")
         # Now we have population ready to crossover
         next_gen = []
         indices = list(range(self.population_size))
@@ -84,5 +86,34 @@ class GeneticAlgorithm:
             else:
                 next_gen.extend((parents[x], parents[x+1]))
 
-        self.population = [self.mutate(x) if u() < self.mutation_rate else x for x in next_gen]
+        return [self.mutate(x) if u() < self.mutation_rate else x for x in next_gen]
+
+    def do_elitism(self, fitness):
+        sorted_population = sorted(
+            zip(fitness, self.population),
+            key=lambda x: x[0],
+            reverse=True
+        )
+        # Select 10% of the best
+        decile = math.ceil(0.1 * self.population_size)
+        best = [x[1] for x in sorted_population[:decile]]
+        next_gen = [*best]
+
+        for _ in range(self.population_size - len(best)):
+            parent1 = random.choice(best[:(decile//2)])
+            parent2 = random.choice(best[:(decile//2)])
+            child = self.crossover(parent1, parent2)
+            next_gen.append(child)
+        return next_gen
+
+    def next_generation(self, fitness):
+        """
+        @fitness: [population 0 fitness, population 1 fitness, ... population N fitness]
+        """
+        if self.selection_method == 'elitism':
+            self.population = self.do_elitism(fitness)
+        elif self.selection_method == 'roulette_wheel':
+            self.population = self.do_roulette_selection(fitness)
+        else:
+            raise Exception("invalid selection method")
         return self.population
