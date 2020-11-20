@@ -31,7 +31,7 @@ class GeneticAlgorithm:
 
     def mutate(self, c):
         if self.mutation_type == 'flip':
-            number_of_mutations = max(1, self.chromosome_size//100)  # Mutate 0.1 % of genes
+            number_of_mutations = max(1, self.chromosome_size//1000)  # Mutate 0.1 % of genes
             mutation_points = [random.randrange(self.chromosome_size) for _ in range(number_of_mutations)]
             new_c = list(c)
             for i in mutation_points:
@@ -49,9 +49,13 @@ class GeneticAlgorithm:
             return c1, c2
 
     def do_roulette_selection(self, fitness):
+        """
+        @fitness: [population 0 fitness, population 1 fitness, ... population N fitness]
+        """
         parents = []
         total_fitness = sum(fitness)
-        for x in range(self.population_size):
+
+        for _ in range(self.population_size):
             p = 0
             s = u(0, total_fitness)
             for i, f in enumerate(fitness):
@@ -62,24 +66,23 @@ class GeneticAlgorithm:
         return parents
 
     def next_generation(self, fitness):
+        """
+        @fitness: [population 0 fitness, population 1 fitness, ... population N fitness]
+        """
         if self.selection_method == 'roulette_wheel':
             parents = self.do_roulette_selection(fitness)
         else:
             raise Exception("invalid selection method")
         # Now we have population ready to crossover
         next_gen = []
-        indices_set = set(range(self.population_size))
-        for x in range(self.population_size//2):  # Assumes even population size
-            p1_ind = random.choice(list(indices_set))
-            indices_set.remove(p1_ind)
-            p2_ind = random.choice(list(indices_set))
-            indices_set.remove(p2_ind)
-
+        indices = list(range(self.population_size))
+        random.shuffle(indices)
+        for x in range(0, self.population_size, 2):  # Assumes even population size
             should_crossover = u() < self.crossover_rate
             if should_crossover:
-                next_gen.extend(self.crossover(parents[p1_ind], parents[p2_ind]))
+                next_gen.extend(self.crossover(parents[x], parents[x+1]))
             else:
-                next_gen.extend((parents[p1_ind], parents[p2_ind]))
+                next_gen.extend((parents[x], parents[x+1]))
 
-        mutated = [self.mutate(x) if u() < self.mutation_rate else x for x in next_gen]
-        return mutated
+        self.population = [self.mutate(x) if u() < self.mutation_rate else x for x in next_gen]
+        return self.population

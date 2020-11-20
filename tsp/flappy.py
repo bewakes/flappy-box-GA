@@ -3,13 +3,13 @@ import random
 
 import tkinter as tk
 
-FPS = 80
+FPS = 120
 FRAME_INTERVAL_MS = round(1000/FPS)
 
 WIDTH = 900
 HEIGHT = 450
 OBSTACLES_H_SPACING = 350
-OBSTACLES_V_SPACING = 175
+OBSTACLES_V_SPACING = 200
 OBSTACLES_WIDTH = 50
 SPEED = 8
 XSTEP = OBSTACLES_WIDTH + OBSTACLES_H_SPACING
@@ -28,7 +28,7 @@ MAX_V = 40
 MIN_DX = -OBSTACLES_WIDTH  # Minimum distance that can be between bird and nearest obstacle
 MAX_DX = OBSTACLES_H_SPACING  # Max distance that can be between bird and nearest obstacle
 
-CHROMOSOME_STEP = 50  # This is for the array size
+CHROMOSOME_STEP = 40  # This is for the array size
 
 VSIZE = (MAX_V - MIN_V) // CHROMOSOME_STEP + 1
 DYSIZE = 2*HEIGHT // CHROMOSOME_STEP + 1  # [-height, -height + 10, ... , 0, 10, 20, ... height]
@@ -100,7 +100,7 @@ class Flappy():
         return self.chromosome[index] == 1
 
     def jump(self):
-        self.v = -8
+        self.v = -10
 
     def did_collide(self, obstacles, curr_x):
         return any([
@@ -146,11 +146,11 @@ class Game(tk.Frame):
         self.animate()
 
     def reset(self):
-        self._obstacles = [
+        self.obstacles = [
             generate_obstacle(x)
             for x in range(OBSTACLES_START, 1200, OBSTACLES_WIDTH + OBSTACLES_H_SPACING)
         ]
-        self.obstacles = read_obstacles()
+        # self.obstacles = read_obstacles()
         [bird.reset() for bird in self.birds]
         self.stop = False
         self.time = 0
@@ -206,8 +206,8 @@ class Game(tk.Frame):
         self.canvas.create_rectangle(
             bird.x, bird.y,
             bird.x + FLAPPY_WIDTH, bird.y + FLAPPY_HEIGHT,
-            # fill=bird.color,
-            fill='skyblue',
+            fill=bird.color,
+            # fill='skyblue',
         )
 
     def draw_obstacles(self):
@@ -229,13 +229,12 @@ class Game(tk.Frame):
             self.draw_flappy(self.birds[0])
         else:
             [self.draw_flappy(bird) for bird in self.birds if not bird.dead]
+            self.generation_counter.set(f'Generation: {self.generation}')
+            # Set scores
+            for i, c in enumerate(self.birds_scores):
+                c.set(f'Bird {i} Score:                      {self.birds[i].score}')
 
-        self.generation_counter.set(f'Generation: {self.generation}')
-        # Set scores
-        for i, c in enumerate(self.birds_scores):
-            c.set(f'Bird {i} Score:                      {self.birds[i].score}')
-
-        self.best_so_far.set(f'Best Score so far: {self.best_score_so_far}')
+            self.best_so_far.set(f'Best Score so far: {self.best_score_so_far}')
 
     def curr_x(self, x):
         return x - self.time * SPEED
@@ -301,10 +300,11 @@ if __name__ == '__main__':
 
     genetic_alg = GeneticAlgorithm(
         population_size=24,
-        crossover_rate=0.7,
-        mutation_rate=0.09,
+        crossover_rate=0.6,
+        mutation_rate=0.1,
         chromosome_size=DYSIZE*DXSIZE,
     )
+    print(genetic_alg.chromosome_size)
 
     game = Game(play=False, genetic_algorithm=genetic_alg)
     game.mainloop()
