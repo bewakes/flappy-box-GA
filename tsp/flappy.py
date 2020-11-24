@@ -3,7 +3,7 @@ import random
 
 import tkinter as tk
 
-FPS = 120
+FPS = 80
 FRAME_INTERVAL_MS = round(1000/FPS)
 
 WIDTH = 1500
@@ -28,11 +28,15 @@ MAX_V = 40
 MIN_DX = -OBSTACLES_WIDTH  # Minimum distance that can be between bird and nearest obstacle
 MAX_DX = OBSTACLES_H_SPACING  # Max distance that can be between bird and nearest obstacle
 
-CHROMOSOME_STEP = 40  # This is for the array size
+CELL_SIZE = 50  # This is for the array size
 
-VSIZE = (MAX_V - MIN_V) // CHROMOSOME_STEP + 1
-DYSIZE = 2*HEIGHT // CHROMOSOME_STEP + 1  # [-height, -height + 10, ... , 0, 10, 20, ... height]
-DXSIZE = (MAX_DX - MIN_DX) // CHROMOSOME_STEP + 1
+VSIZE = (MAX_V - MIN_V) // CELL_SIZE + 1
+DYSIZE = 2*HEIGHT // CELL_SIZE + 1  # [-height, -height + 10, ... , 0, 10, 20, ... height]
+DXSIZE = (MAX_DX - MIN_DX) // CELL_SIZE + 1
+
+SEED = 945  # random.randrange(0, 1000)
+print('SEED', SEED)
+r = random.Random()
 
 
 def random_color():
@@ -42,7 +46,7 @@ def random_color():
 
 def generate_obstacle(x: int):
     """Returns obstacle bounds for obstacle """
-    upper_y = random.randrange(10, HEIGHT - OBSTACLES_V_SPACING - 10)
+    upper_y = r.randrange(10, HEIGHT - OBSTACLES_V_SPACING - 10)
     return [
         (x, 0, x+OBSTACLES_WIDTH, upper_y),
         (x, upper_y + OBSTACLES_V_SPACING, x+OBSTACLES_WIDTH, HEIGHT)
@@ -90,9 +94,9 @@ class Flappy():
         dx = self.x - nearest_obstacle_upper_rect[0]
         upper_dy = self.y - nearest_obstacle_upper_rect[3]
 
-        i = math.ceil(dx - MIN_DX) // CHROMOSOME_STEP
-        j = math.ceil(upper_dy + HEIGHT) // CHROMOSOME_STEP
-        # k = math.ceil(self.v - MIN_V) // CHROMOSOME_STEP
+        i = math.ceil(dx - MIN_DX) // CELL_SIZE
+        j = math.ceil(upper_dy + HEIGHT) // CELL_SIZE
+        # k = math.ceil(self.v - MIN_V) // CELL_SIZE
         index = (j * DXSIZE + i)
         if index > len(self.chromosome):
             print('index greater')
@@ -147,11 +151,12 @@ class Game(tk.Frame):
         self.animate()
 
     def reset(self):
-        self._obstacles = [
+        r.seed(SEED)
+
+        self.obstacles = [
             generate_obstacle(x)
             for x in range(OBSTACLES_START, 1200, OBSTACLES_WIDTH + OBSTACLES_H_SPACING)
         ]
-        self.obstacles = read_obstacles()
         [bird.reset() for bird in self.birds]
         self.stop = False
         self.time = 0
@@ -283,31 +288,12 @@ class Game(tk.Frame):
         self.master.after(FRAME_INTERVAL_MS, self.animate)
 
 
-def generate_obstacles():
-    with open('obstacles.data', 'w') as f:
-        for i in range(5000):
-            (a, b, c, d), (w, x, y, z) = generate_obstacle(OBSTACLES_START + i * (OBSTACLES_WIDTH + OBSTACLES_H_SPACING))
-            f.write(f'{a} {b} {c} {d} {w} {x} {y} {z}\n')
-
-
-def read_obstacles():
-    obstacles = []
-    with open('obstacles.data') as f:
-        for line in f.readlines():
-            a, b, c, d, e, ff, g, h = line.split()
-            obstacles.append([
-                (int(a), int(b), int(c), int(d)),
-                (int(e), int(ff), int(g), int(h)),
-            ])
-    return obstacles[:100]
-
-
 if __name__ == '__main__':
     from ga import GeneticAlgorithm
 
     genetic_alg = GeneticAlgorithm(
         population_size=50,
-        mutation_rate=0.25,
+        mutation_rate=0.3,
         chromosome_size=DYSIZE*DXSIZE,
     )
 

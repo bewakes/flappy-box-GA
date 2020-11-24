@@ -96,12 +96,13 @@ class GeneticAlgorithm:
         )
         # Select 10% of the best
         decile = math.ceil(0.1 * self.population_size)
+        half_decile = decile // 2
         best = [x[1] for x in sorted_population[:decile]]
-        next_gen = [*best]
+        next_gen = list(best)
 
         for _ in range(self.population_size - len(best)):
-            parent1 = random.choice(best[:(decile//2)])
-            parent2 = random.choice(best[:(decile//2)])
+            parent1 = random.choice(best[:half_decile])
+            parent2 = random.choice(best[half_decile:])
             child = self.crossover(parent1, parent2)
             next_gen.append(child)
         return next_gen
