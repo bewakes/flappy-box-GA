@@ -3,7 +3,7 @@ import random
 
 import tkinter as tk
 
-FPS = 80
+FPS = 100
 FRAME_INTERVAL_MS = round(1000/FPS)
 
 WIDTH = 1500
@@ -88,7 +88,6 @@ class Flappy():
                 nearest_obstacle = obstacle
                 break
 
-        nearest_obstacle = obstacles[0]
         nearest_obstacle_upper_rect = nearest_obstacle[0]
 
         dx = self.x - nearest_obstacle_upper_rect[0]
@@ -132,6 +131,7 @@ class Flappy():
 class Game(tk.Frame):
     def __init__(self, play=True, genetic_algorithm=None):
         self.master = tk.Tk()
+        self.master.title('Flappy Box')
         super().__init__(self.master)
         self.generation = 0
         self.best_score_so_far = 0
@@ -210,8 +210,6 @@ class Game(tk.Frame):
     def on_key(self, event):
         if self.play and event.keysym == 'space':
             self.birds[0].jump()
-        if self.genetic_algorithm and event.keysym == 'n':  # next gen
-            self.next_run()
 
     def draw_flappy(self, bird):
         self.canvas.create_rectangle(
