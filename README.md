@@ -5,7 +5,7 @@ This program uses Genetic Algorithm to play flappy bird. The bird is replaced wi
 Any system with `python>=3.6` and `pip` will do.
 
 ## Usage
-**NOTE:** These are linux specific instructions. For windows users please find equivalent command. These should work on a Mac. 
+**NOTE:** These are linux specific instructions. For windows users please find equivalent command. These should work on a Mac.
 
 1. Bare minimum [Not recommended]
     - This installs the requirements for this project along with system python libraries.
@@ -20,3 +20,7 @@ Any system with `python>=3.6` and `pip` will do.
 3. Using pipenv [Recommended, but don't bother if you don't have `pipenv`]
     - Install requirements: `pipenv install`
     - Run program: `pipenv run python tsp/flappy.py`
+
+
+## Or if you want to play
+Inside `main()` function of `flappy.py` module, initialize `Game` with `play=True`
