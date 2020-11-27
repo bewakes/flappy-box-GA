@@ -1,5 +1,5 @@
 # Genetic Algorithm that plays flappy Bird(Box)
-This program uses Genetic Algorithm to play flappy bird. The bird is replaced with a box though.
+This is a part of assignment of Knowledge Engineering course 2020. This program uses Genetic Algorithm to play flappy bird. The bird is replaced with a box. It's no fancy, just serves the purpose.
 
 ## Requirements
 Any system with `python>=3.6` and `pip` will do.
